@@ -228,7 +228,7 @@ public:
 
       if (pItem)
       {
-        mSelectedIndex = mItems.Find(pItem);
+        mSelectedItemIndex = mItems.Find(pItem);
         LoadFileAtCurrentIndex();
       }
     }
@@ -240,10 +240,10 @@ public:
       const auto nItems = NItems();
       if (nItems == 0)
         return;
-      mSelectedIndex--;
+      mSelectedItemIndex--;
 
-      if (mSelectedIndex < 0)
-        mSelectedIndex = nItems - 1;
+      if (mSelectedItemIndex < 0)
+        mSelectedItemIndex = nItems - 1;
 
       LoadFileAtCurrentIndex();
     };
@@ -252,10 +252,10 @@ public:
       const auto nItems = NItems();
       if (nItems == 0)
         return;
-      mSelectedIndex++;
+      mSelectedItemIndex++;
 
-      if (mSelectedIndex >= nItems)
-        mSelectedIndex = 0;
+      if (mSelectedItemIndex >= nItems)
+        mSelectedItemIndex = 0;
 
       LoadFileAtCurrentIndex();
     };
@@ -304,7 +304,11 @@ public:
       else
       {
         CheckSelectedItem();
-        mMainMenu.SetChosenItemIdx(mSelectedIndex);
+
+        if (!mMainMenu.HasSubMenus())
+        {
+          mMainMenu.SetChosenItemIdx(mSelectedItemIndex);
+        }
         pCaller->GetUI()->CreatePopupMenu(*this, mMainMenu, pCaller->GetRECT());
       }
     };
@@ -333,7 +337,7 @@ public:
 
   void LoadFileAtCurrentIndex()
   {
-    if (mSelectedIndex > -1 && mSelectedIndex < NItems())
+    if (mSelectedItemIndex > -1 && mSelectedItemIndex < NItems())
     {
       WDL_String fileName, path;
       GetSelectedFile(fileName);
@@ -356,15 +360,14 @@ public:
       case kMsgTagLoadedModel:
       case kMsgTagLoadedIR:
       {
-        WDL_String fileName;
+        WDL_String fileName, directory;
         fileName.Set(reinterpret_cast<const char*>(pData));
-        ClearPathList();
-        fileName.remove_filepart(true);
-        AddPath(fileName.Get(), "");
-        SetupMenu();
+        directory.Set(reinterpret_cast<const char*>(pData));
+        directory.remove_filepart(true);
 
-        // reset
-        fileName.Set(reinterpret_cast<const char*>(pData));
+        ClearPathList();
+        AddPath(directory.Get(), "");
+        SetupMenu();
         SetSelectedFile(fileName.Get());
         mFileNameControl->SetLabelAndTooltipEllipsizing(fileName);
         break;
@@ -374,7 +377,7 @@ public:
   }
 
 private:
-  void SelectFirstFile() { mSelectedIndex = mFiles.GetSize() ? 0 : -1; }
+  void SelectFirstFile() { mSelectedItemIndex = mFiles.GetSize() ? 0 : -1; }
 
   void GetSelectedFileDirectory(WDL_String& path)
   {
@@ -432,7 +435,7 @@ public:
   }
 };
 
-const IText _WARNING_TEXT(DEFAULT_TEXT_SIZE + 3.f, COLOR_RED, "Roboto-Regular", EAlign::Near);
+const IText _WARNING_TEXT(DEFAULT_TEXT_SIZE + 3.f, PluginColors::NAM_THEMECOLOR, "Roboto-Regular", EAlign::Near);
 
 class NAMSampleRateWarningControl : public ITextControl
 {
@@ -457,7 +460,7 @@ public:
   void SetSampleRate(const double sampleRate)
   {
     std::stringstream ss;
-    ss << "WARNING: NAM model expects sample rate " << static_cast<long>(std::round(sampleRate));
+    ss << "[INFO] Resampling to " << static_cast<long>(std::round(sampleRate)) << " Hz";
     SetStr(ss.str().c_str());
   }
 
